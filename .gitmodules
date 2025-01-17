@@ -1,0 +1,3 @@
+[submodule "exporters"]
+	path = exporters
+	url = git@github.com:Shazy1997/ha-ai-exporters.git

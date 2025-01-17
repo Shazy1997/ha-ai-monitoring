@@ -1,0 +1,58 @@
+groups:
+  - name: AI_Services_Alerts
+    rules:
+      - alert: AIServiceDown
+        expr: up{service_type="ai"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI Service {{ $labels.instance }} is down"
+          description: "AI service has been down for more than 2 minutes."
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes / container_memory_limit_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Container using more than 85% of allocated memory for 5 minutes"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.name }}"
+          description: "Container CPU usage above 80% for 5 minutes"
+
+  - name: System_Alerts
+    rules:
+      - alert: HighSystemTemperature
+        expr: node_thermal_zone_temp > 70
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "System temperature critical"
+          description: "Temperature above 70°C for 5 minutes"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.device }}"
+          description: "Less than 10% disk space available"
+
+      - alert: MQTTBrokerDown
+        expr: up{service_type="messaging"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MQTT Broker is down"
+          description: "MQTT Broker has been down for more than 1 minute"

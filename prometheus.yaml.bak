@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'homeassistant'
+    metrics_path: '/api/prometheus'
+    static_configs:
+      - targets: ['homeassistant:8123']
+      
+  - job_name: 'host'
+    static_configs:
+      - targets: ['localhost:9100']
+        labels:
+          instance: 'raspberry-pi-5'
+    
+  - job_name: 'ai_services'
+    static_configs:
+      - targets: 
+        - 'addon_core_whisper:9090'
+        - 'addon_core_piper:9091'
+        - 'addon_core_openwakeword:9092'
+        labels:
+          service_type: 'ai'
+
+  - job_name: 'mqtt'
+    static_configs:
+      - targets: ['addon_core_mosquitto:9641']
+        labels:
+          service_type: 'messaging'
+
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['localhost:9323']
+        labels:
+          instance: 'docker-host'
+
+rule_files:
+  - 'alerts.yml'
