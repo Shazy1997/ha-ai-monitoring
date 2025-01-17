@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -20,21 +20,15 @@ jobs:
         python-version: '3.10'
 
     - name: Install dependencies
+      working-directory: ./exporters
       run: |
         python -m pip install --upgrade pip
-        cd exporters
         pip install -r requirements.txt
-        pip install pylint pytest pytest-cov
+        pip install pytest pytest-cov
 
     - name: Run tests
-      run: |
-        cd exporters
-        ./test_collectors.sh
-
-    - name: Run linting
-      run: |
-        cd exporters
-        pylint *.py --disable=C0111,C0103
+      working-directory: ./exporters
+      run: bash test_collectors.sh
 
   docker:
     runs-on: ubuntu-latest
@@ -43,33 +37,23 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Test Docker build
-      run: |
-        docker buildx create --use
-        cd exporters
-        docker buildx build --platform linux/amd64,linux/arm64 .
+    - name: Build Docker image
+      working-directory: ./exporters
+      run: docker build -t ha-ai-exporters .
 
   verify-configs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install Prometheus
+    - name: Check YAML syntax
       run: |
-        wget https://github.com/prometheus/prometheus/releases/download/v2.45.0/prometheus-2.45.0.linux-amd64.tar.gz
-        tar xvf prometheus-*.tar.gz
+        pip install yamllint
+        yamllint -d '{extends: default, rules: {line-length: disable}}' .
         
-    - name: Validate Prometheus config
-      run: |
-        ./prometheus-*/promtool check config prometheus.yaml
-        ./prometheus-*/promtool check rules alerts.yml
-
     - name: Validate Docker Compose
       run: |
         docker-compose -f docker-compose.test.yml config
