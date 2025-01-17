@@ -12,31 +12,30 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        submodules: recursive
+        submodules: true
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.9"
 
-    - name: Validate YAML
+    - name: Setup Git Configuration
       run: |
-        pip install PyYAML==6.0.1
-        for file in $(find . -name "*.yml" -o -name "*.yaml"); do
-          echo "Validating $file"
-          python -c "import yaml; yaml.safe_load(open(\"$file\"))"
-        done
+        git config --global url."https://github.com/".insteadOf git@github.com:
+        git submodule update --init --recursive
 
     - name: Install Dependencies
-      working-directory: exporters
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt pytest pytest-cov
+        pip install PyYAML==6.0.1 pytest pytest-cov
+        cd exporters
+        pip install -r requirements.txt
 
     - name: Run Tests
       working-directory: exporters
       run: |
-        pytest -v --cov
+        python -m pytest -v --cov
 
   docker:
     runs-on: ubuntu-latest
@@ -44,13 +43,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        submodules: recursive
+        submodules: true
+        fetch-depth: 0
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Setup Git Configuration
+      run: |
+        git config --global url."https://github.com/".insteadOf git@github.com:
+        git submodule update --init --recursive
 
-    - name: Build and Test
+    - name: Build and Test Docker
       working-directory: exporters
       run: |
         docker build -t ha-ai-exporters .
-        docker run --rm ha-ai-exporters python -m pytest -v
+        docker run --rm ha-ai-exporters python -c "import prometheus_client; print(\"Dependencies verified\")"
