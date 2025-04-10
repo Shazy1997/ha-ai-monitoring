@@ -1,0 +1,11 @@
+groups:
+- name: ai_alerts
+  rules:
+  - alert: ServiceDown
+    expr: up == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Service {{ $labels.instance }} down"
+      description: "Service has been down for more than 5 minutes."
